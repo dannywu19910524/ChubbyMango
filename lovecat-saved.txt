@@ -1,0 +1,67 @@
+local lovecat = {}
+
+
+-- namespaces:
+lovecat.number = {}
+lovecat.number.Balls = {}
+lovecat.number.Mango = {}
+lovecat.number.Panel = {}
+lovecat.number.Wall = {}
+lovecat.color = {}
+lovecat.color.Balls = {}
+lovecat.color.Mango = {}
+lovecat.color.Panel = {}
+
+
+-- saved parameters:
+lovecat.number.Balls.friction = 0.49476987447699
+lovecat.number.Balls.max_radius = 0.71690694626474
+lovecat.number.Balls.n = 0.77850589777195
+lovecat.number.Mango.damping = 1
+lovecat.number.Mango.min_speed_0 = 0.38689547581903
+lovecat.number.Mango.radius = 0.60419397116645
+lovecat.number.Mango.restitution = 0.5
+lovecat.number.Mango.time_speed = 0.84090909090909
+lovecat.number.Panel.friction = 0.5
+lovecat.number.Panel.from_bottom = 0.58658346333853
+lovecat.number.Panel.move_delay = 0.61154446177847
+lovecat.number.Panel.n = 0.60842433697348
+lovecat.number.Panel.restitution = 0.5
+lovecat.number.Panel.size = 0.47272727272727
+lovecat.number.Panel.thick = 1
+lovecat.number.Wall.restitution = 0.5
+lovecat.color.Balls.color = {267.76716312026, 44.056641187133, 90}
+lovecat.color.Mango.color = {302.56661086226, 55.197640290813, 55.858500447185}
+lovecat.color.Panel.color = {84.060448048704, 79.709706883555, 82.597877394415}
+lovecat.color.background = {120.86521417879, 47.69349746596, 77.349948294137}
+lovecat.color.text_color = {230.35390209826, 58.283589606363, 90}
+
+
+-- The following code tries to make the saved file a drop-in
+-- replacement for lovecat.lua
+
+local function make_tostring(prefix, node)
+    setmetatable(node, {__tostring=function() return prefix end})
+    for ident,v in pairs(node) do
+        if prefix == '' or
+           (type(ident) == 'string' and
+            ('A'):byte() <= ident:byte() and
+            ('Z'):byte() >= ident:byte()) then
+            local new_prefix
+            if prefix == '' then
+                new_prefix = ident
+            else
+                new_prefix = prefix..'.'..ident
+            end
+            make_tostring(new_prefix, v)
+        end
+    end
+end
+make_tostring('', lovecat)
+
+lovecat.update       = function() end
+lovecat.watch_add    = function() end
+lovecat.watch_remove = function() end
+lovecat.set_default  = function() end
+
+return lovecat
