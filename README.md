@@ -1,5 +1,5 @@
 # ChubbyMango
-a little game written by lua & LÖVE2d
+a little game written by _Lua_ & _LÖVE2d_
 ***
 _Mango_ loves eating balls(or peach?), but she can't eat the ball bigger than herself.
 ***
