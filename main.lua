@@ -90,7 +90,7 @@ function update_world()
 	mango_body:setLinearDamping(mango_damping)
 
 	clear_fixtures(mango_body)
-	local shape = love.physics.newCircleShape(mango_radius)
+	local shape = love.physics.newCircleShape(mango_radius + mango_add_radius)
 	local fixture = love.physics.newFixture(mango_body, shape)
 
 	clear_fixtures(panel_body)
@@ -157,6 +157,10 @@ function love.load()
 	-- wall_bottom = love.physics.newBody(world, sW/2, sH+5)
 	-- local shape = love.physics.newRectangleShape(sW, 10)
 	-- local fixture = love.physics.newFixture(wall_bottom, shape)
+	mango_add_radius = 0
+	mango_points = 0
+	game_time = 0
+	game_over = false
 
 	mango_body = love.physics.newBody(world, sW/2, sH/2, 'dynamic')
 	mango_body:setLinearVelocity(0.01, 0.01)
@@ -173,34 +177,39 @@ function love.load()
 	world:setCallbacks(function ()
 		mango_points = mango_points + 1
 
+		i=0
 		for _, contact in ipairs(mango_body:getContactList()) do
+			i = i + 1
 			local fa, fb = contact:getFixtures()
 			local ball_fixture, mango_fixture
 			if fa:getBody():getUserData() == 'ball' then
 					ball_fixture = fa
 					mango_fixture = fb 
-			else
+			else 
+				if fb:getBody():getUserData() == 'ball' then
 					ball_fixture = fb
 					mango_fixture = fa
+				else
+					break
+				end
 			end
 			if ball_fixture:isDestroyed() then
 				contact:setEnabled(false)
 			else
 				if ball_fixture:getShape():getRadius() < mango_fixture:getShape():getRadius() then
+					local radius = ball_fixture:getShape():getRadius()
+					print(i, radius, ball_fixture:getBody(), mango_add_radius)
 					ball_fixture:getBody():destroy()
 					ball_fixture:destroy()
 					contact:setEnabled(false)
+
+					--eat a ball, increase mango_add_radius
+					--mango_add_radius = mango_add_radius + (radius / 10.0)
 				end
 			end
-
+			break
 		end
-	end)
-
-	mango_points = 0
-	game_time = 0
-	game_over = false
-
-	contact_number = 0
+	end,nil,nil,nil)
 end
 
 
@@ -252,14 +261,12 @@ function love.draw()
 		love.graphics.print("game over", 10, 10)
 	end
 
-	love.graphics.print("contact:"..contact_number, 10, 40)
-
 	love.graphics.setColor(HSV(unpack(lovecat.color.Panel.color)))
 	love.graphics.rectangle('fill', panel_grid_size*panel_pos, panel_y, panel_grid_size*panel_size, panel_thick)
 
 	love.graphics.setColor(HSV(unpack(lovecat.color.Mango.color)))
 	local mango_x, mango_y = mango_body:getWorldCenter()
-	love.graphics.circle('fill', mango_x, mango_y, mango_radius)
+	love.graphics.circle('fill', mango_x, mango_y, mango_radius + mango_add_radius)
 	
 	foreach_balls(Balls,draw_ball)
 
@@ -270,6 +277,7 @@ function love.keypressed(key, isrepeat)
 		local sW, sH = love.window.getDimensions()
 		mango_body:setPosition(sW/2, sH/2)
 		mango_body:setLinearVelocity(0.01, 0.01)
+		mango_add_radius = 0
 		game_over = false
 		mango_points = 0
 		game_time = 0
