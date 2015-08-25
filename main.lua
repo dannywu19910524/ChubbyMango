@@ -174,45 +174,42 @@ function love.load()
 
 	update_world()
 
-	world:setCallbacks(function ()
-		mango_points = mango_points + 1
+	world:setCallbacks(nil, nil, preSolve(fa, fb, contact), nil)
 
-		i=0
-		for _, contact in ipairs(mango_body:getContactList()) do
-			i = i + 1
-			local fa, fb = contact:getFixtures()
-			local ball_fixture, mango_fixture
-			if fa:getBody():getUserData() == 'ball' then
-					ball_fixture = fa
-					mango_fixture = fb 
-			else 
-				if fb:getBody():getUserData() == 'ball' then
-					ball_fixture = fb
-					mango_fixture = fa
-				else
-					break
-				end
-			end
-			if ball_fixture:isDestroyed() then
-				contact:setEnabled(false)
-			else
-				if ball_fixture:getShape():getRadius() < mango_fixture:getShape():getRadius() then
-					local radius = ball_fixture:getShape():getRadius()
-					print(i, radius, ball_fixture:getBody(), mango_add_radius)
-					ball_fixture:getBody():destroy()
-					ball_fixture:destroy()
-					contact:setEnabled(false)
-
-					--eat a ball, increase mango_add_radius
-					--mango_add_radius = mango_add_radius + (radius / 10.0)
-				end
-			end
-			break
-		end
-	end,nil,nil,nil)
 end
 
+function preSolve(fa, fb, contact)
+	print(fa, fb, contact)
+	fball, fmango = get_exact_fixture(fa, fb, 'ball', 'mango')
+	if fball == nil or fmango == nil then
+		return
+	end
+	if fball:isDestroyed() then
+		contact:setEnabled(false)
+		return
+	end
+	if fball:getShape():getRadius() < fmango:getShape():getRadius() then
+		local radius = fball:getShape():getRadius()
+		print(i, radius, fball:getBody(), mango_add_radius)
+		fball:getBody():destroy()
+		fball:destroy()
+		contact:setEnabled(false)
+		mango_add_radius = mango_add_radius + (radius / 10.0)
+	end
+end
 
+function get_exact_fixture(fa, fb, taga, tagb)
+	if fa == nil or fb == nil then
+		return nil, nil
+	end
+	if (fa:getBody():getUserData() == taga) and (fb:getBody():getUserData() == tagb) then
+		return fa, fb
+	end
+	if (fa:getBody():getUserData() == tagb) and (fb:getBody():getUserData() == taga) then
+		return fb, fa
+	end
+	return nil, nil
+end
 
 function clamp(x, a, b)
 	return math.min(math.max(x, a), b)
