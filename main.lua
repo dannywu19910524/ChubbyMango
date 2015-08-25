@@ -41,9 +41,16 @@ function load_balls(n, max_radius)
 		rW = math.random()
 		rH = math.random()*0.8
 		rRadius = math.random() * max_radius / 2 + max_radius / 2
+		ball_userdata = {}
+		ball_userdata.id = i
+		ball_userdata.name = 'ball'
+		ball_userdata.type = 'static'
+		ball_userdata.radius = rRadius
+		ball_userdata.eat = false
 		ball = {}
 		ball.body = love.physics.newBody(world, sW*rW, sH*rH, 'static')
-		ball.body:setUserData('ball')
+		ball.body:setUserData(ball_userdata)
+		print(ball.body:getUserData().eat)
 		ball.radius = rRadius
 		Balls[i] = ball
 	end
@@ -164,7 +171,10 @@ function love.load()
 
 	mango_body = love.physics.newBody(world, sW/2, sH/2, 'dynamic')
 	mango_body:setLinearVelocity(0.01, 0.01)
-	mango_body:setUserData('mango')
+	mango_userdata = {}
+	mango_userdata.name = 'mango'
+	mango_userdata.type = 'dynamic'
+	mango_body:setUserData(mango_userdata)
 
 	panel_body = love.physics.newBody(world, (panel_pos+panel_size/2)*panel_grid_size, panel_y+panel_thick/2)
 	local shape = love.physics.newRectangleShape(panel_size*panel_grid_size, panel_thick)
@@ -174,12 +184,12 @@ function love.load()
 
 	update_world()
 
-	world:setCallbacks(nil, nil, preSolve(fa, fb, contact), nil)
+	world:setCallbacks(nil, nil, preSolve, nil)
 
 end
 
 function preSolve(fa, fb, contact)
-	print(fa, fb, contact)
+	mango_points = mango_add_radius
 	fball, fmango = get_exact_fixture(fa, fb, 'ball', 'mango')
 	if fball == nil or fmango == nil then
 		return
@@ -188,24 +198,41 @@ function preSolve(fa, fb, contact)
 		contact:setEnabled(false)
 		return
 	end
-	if fball:getShape():getRadius() < fmango:getShape():getRadius() then
-		local radius = fball:getShape():getRadius()
-		print(i, radius, fball:getBody(), mango_add_radius)
+	if fball:getShape():getRadius() < fmango:getShape():getRadius() + mango_add_radius then
+		local r1 = fball:getShape():getRadius()
+		local r2 = fmango:getShape():getRadius()
+		--print(i, radius, fball:getBody(), mango_add_radius)
 		fball:getBody():destroy()
 		fball:destroy()
 		contact:setEnabled(false)
-		mango_add_radius = mango_add_radius + (radius / 10.0)
+
+		local userdata = fball:getBody():getUserData()
+		if userdata ~=nil and userdata.eat == false then
+			userdata.eat = true
+			fball:getBody():setUserData(userdata)
+			mango_add_radius = get_add_radius(r1,r2,mango_add_radius)
+			
+		end
 	end
+end
+
+function get_add_radius(r1, r2, r3)
+	local pow = 3.0
+	result = math.pow(math.pow(r1,pow)+math.pow(r2+r3,pow),1/pow) - r2
+	print(r1,r2,r3,result)
+	return result
 end
 
 function get_exact_fixture(fa, fb, taga, tagb)
 	if fa == nil or fb == nil then
 		return nil, nil
 	end
-	if (fa:getBody():getUserData() == taga) and (fb:getBody():getUserData() == tagb) then
+	local fa_userdata = fa:getBody():getUserData()
+	local fb_userdata = fb:getBody():getUserData()
+	if fa_userdata ~= nil and fb_userdata ~=nil and ( fa_userdata.name == taga) and (fb_userdata.name == tagb) then
 		return fa, fb
 	end
-	if (fa:getBody():getUserData() == tagb) and (fb:getBody():getUserData() == taga) then
+	if fa_userdata ~= nil and fb_userdata ~=nil and ( fa_userdata.name == tagb) and (fb_userdata.name == taga) then
 		return fb, fa
 	end
 	return nil, nil
